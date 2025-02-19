@@ -16,7 +16,7 @@ COPY . .
 # Install dependencies
 RUN pip install -r requirements.txt
 
-Expose port
+# Expose port
 EXPOSE 5000
 
 # Set the working directory for application source code
