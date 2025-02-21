@@ -100,6 +100,13 @@ async def check_status(username: str):
 # Include file router
 app.include_router(file_router)
 
+# Catch-all route for unmatched GET requests
+@app.api_route("/{anypath:path}", methods=["GET"])
+async def catch_all(request: Request, anypath: str):
+    print(f"Unmatched GET request: {anypath}")
+    return JSONResponse(content={"message": f"Route {anypath} not found"}, status_code=404)
+
+
 # Run the app using Uvicorn
 if __name__ == "__main__":
     import uvicorn
