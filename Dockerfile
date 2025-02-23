@@ -3,30 +3,33 @@ FROM python:3.12-slim
 # Change the timezone to UTC+8
 RUN ln -sf /usr/share/zoneinfo/Asia/Singapore /etc/localtime
 
-RUN apt-get update && apt-get upgrade -y
-
-RUN apt-get install -y cron && apt-get clean
+# Install necessary packages
+RUN apt-get update && apt-get install -y cron supervisor
 
 # Set working directory
 WORKDIR /app
 
-# Copy all files to the /app directory
-COPY . .
-
 # Install dependencies
+COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
-# Expose port
-EXPOSE 5000
-
-# Set the working directory for application source code
-WORKDIR /app/src
+# Copy files to the /app directory
+COPY ./src/ ./src/
 
 # Ensure the workspace directory exists
-RUN mkdir -p /app/src/workspace
+RUN mkdir -p /app/src/workspace && mkdir -p /app/src/log
 
-# Make scripts executable
-RUN chmod +x /app/entrypoint.sh
+# for cron daily task
+COPY daily.sh daily.sh
+RUN chmod +x /app/daily.sh
 
-# Run the server using Uvicorn
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Copy cron configuration
+COPY crontab /mycron
+RUN chmod 644 /mycron
+RUN crontab /mycron
+
+# Copy Supervisor configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Start Supervisor
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

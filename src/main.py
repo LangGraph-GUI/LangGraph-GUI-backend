@@ -111,5 +111,5 @@ async def catch_all(request: Request, anypath: str):
 if __name__ == "__main__":
     import uvicorn
 
-    backend_port = int(os.environ.get("BACKEND_PORT", 5000))  # Default to 5000 if not set
+    backend_port = int(os.environ.get("BACKEND_PORT", 8000))  # Default to 8000 if not set
     uvicorn.run(app, host="0.0.0.0", port=backend_port, reload=True)
