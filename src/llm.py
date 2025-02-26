@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-from util import flush_print
+from util import logger
 
 
 # Clip the history for limited token
@@ -26,12 +26,12 @@ def get_llm(llm_model, api_key):
         from langchain_community.chat_models import ChatOpenAI
         os.environ["OPENAI_API_KEY"] = api_key
         llm = ChatOpenAI(temperature=0, model="gpt-4o-mini").bind(response_format={"type": "json_object"})
-        flush_print("Using gpt-4o-mini")
+        logger("Using gpt-4o-mini")
 
         return llm
     # cannot work now, need langchain fix error
     if "google" in llm_model.lower():
-        flush_print("no suport google LLM")
+        logger("no suport google LLM")
         return None        
 
     # ollama case
@@ -44,7 +44,7 @@ def get_llm(llm_model, api_key):
             format="json",
             temperature=0)
 
-        flush_print(f"Using {llm_model}")
+        logger(f"Using {llm_model}")
         return llm
 
 
@@ -121,8 +121,8 @@ def create_llm_chain_google(prompt_template: str, llm, history: Optional[str] = 
         output = str(output)
         output = output[7:-3]
         output = json.dumps({"output": output})
-        flush_print("printing:")        
-        flush_print(output)
+        logger("printing:")        
+        logger(output)
 
         return output
 

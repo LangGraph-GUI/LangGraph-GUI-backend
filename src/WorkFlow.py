@@ -11,7 +11,7 @@ from langgraph.graph import StateGraph, END, START
 
 from NodeData import NodeData
 from llm import get_llm, clip_history, create_llm_chain
-from util import flush_print
+from util import logger
 
 # Tool registry to hold information about tools
 tool_registry: Dict[str, Callable] = {}
@@ -54,7 +54,7 @@ class PipelineState(TypedDict):
     condition: Annotated[bool, lambda x, y: y]
 
 def execute_step(name:str, state: PipelineState, prompt_template: str, llm) -> PipelineState:
-    flush_print(f"{name} is working...")
+    logger(f"{name} is working...")
     state["history"] = clip_history(state["history"])
 
     generation = create_llm_chain(prompt_template, llm, state["history"])
@@ -63,12 +63,12 @@ def execute_step(name:str, state: PipelineState, prompt_template: str, llm) -> P
     state["history"] += "\n" + json.dumps(data)
     state["history"] = clip_history(state["history"])
 
-    flush_print(state["history"])
+    logger(state["history"])
     return state
 
 def execute_tool(name: str, state: PipelineState, prompt_template: str, llm) -> PipelineState:
 
-    flush_print(f"{name} is working...")
+    logger(f"{name} is working...")
 
     state["history"] = clip_history(state["history"])
     
@@ -77,7 +77,7 @@ def execute_tool(name: str, state: PipelineState, prompt_template: str, llm) -> 
     # Sanitize the generation output by removing invalid control characters
     sanitized_generation = re.sub(r'[\x00-\x1F\x7F]', '', generation)
 
-    flush_print(sanitized_generation)
+    logger(sanitized_generation)
 
     data = json.loads(sanitized_generation)
     
@@ -93,7 +93,7 @@ def execute_tool(name: str, state: PipelineState, prompt_template: str, llm) -> 
     # Flatten args to a string
     flattened_args = ', '.join(map(str, args))
 
-    flush_print(f"\nExecuted Tool: {tool_name}({flattened_args})  Result is: {result}")
+    logger(f"\nExecuted Tool: {tool_name}({flattened_args})  Result is: {result}")
 
 
     state["history"] += f"\nExecuted {tool_name}({flattened_args})  Result is: {result}"
@@ -102,7 +102,7 @@ def execute_tool(name: str, state: PipelineState, prompt_template: str, llm) -> 
     return state
 
 def condition_switch(name:str, state: PipelineState, prompt_template: str, llm) -> PipelineState:
-    flush_print(f"{name} is working...")
+    logger(f"{name} is working...")
 
     state["history"] = clip_history(state["history"])
 
@@ -118,7 +118,7 @@ def condition_switch(name:str, state: PipelineState, prompt_template: str, llm) 
     return state
 
 def info_add(name: str, state: PipelineState, information: str, llm) -> PipelineState:
-    flush_print(f"{name} is adding information...")
+    logger(f"{name} is adding information...")
 
     # Append the provided information to the history
     state["history"] += "\n" + information
@@ -128,7 +128,7 @@ def info_add(name: str, state: PipelineState, information: str, llm) -> Pipeline
 
 
 def sg_add(name:str, state: PipelineState, sg_name: str) -> PipelineState:
-    flush_print(f"{name} is working, it is a subgraph node call {sg_name} ...")
+    logger(f"{name} is working, it is a subgraph node call {sg_name} ...")
     subgraph = subgraph_registry[sg_name]
     response = subgraph.invoke(
         PipelineState(
@@ -155,7 +155,7 @@ def build_subgraph(node_map: Dict[str, NodeData], llm) -> StateGraph:
 
     # Start node, only one start point
     start_node = find_nodes_by_type(node_map, "START")[0]
-    flush_print(f"Start root ID: {start_node.uniq_id}")
+    logger(f"Start root ID: {start_node.uniq_id}")
 
     # Step nodes
     step_nodes = find_nodes_by_type(node_map, "STEP")
@@ -209,7 +209,7 @@ def build_subgraph(node_map: Dict[str, NodeData], llm) -> StateGraph:
     next_nodes = [node_map[next_id] for next_id in next_node_ids]
     
     for next_node in next_nodes:
-        flush_print(f"Next node ID: {next_node.uniq_id}, Type: {next_node.type}")
+        logger(f"Next node ID: {next_node.uniq_id}, Type: {next_node.type}")
         subgraph.add_edge(START, next_node.uniq_id)   
 
     # Find all next nodes from step_nodes
@@ -217,7 +217,7 @@ def build_subgraph(node_map: Dict[str, NodeData], llm) -> StateGraph:
         next_nodes = [node_map[next_id] for next_id in node.nexts]
         
         for next_node in next_nodes:
-            flush_print(f"{node.name} {node.uniq_id}'s next node: {next_node.name} {next_node.uniq_id}, Type: {next_node.type}")
+            logger(f"{node.name} {node.uniq_id}'s next node: {next_node.name} {next_node.uniq_id}, Type: {next_node.type}")
             subgraph.add_edge(node.uniq_id, next_node.uniq_id)
 
     # Find all condition nodes
@@ -232,9 +232,9 @@ def build_subgraph(node_map: Dict[str, NodeData], llm) -> StateGraph:
             lambda state, template=condition_template, llm=llm, name=condition.name: condition_switch(name, state, template, llm)
         )
 
-        flush_print(f"{condition.name} {condition.uniq_id}'s condition")
-        flush_print(f"true will go {condition.true_next}")
-        flush_print(f"false will go {condition.false_next}")
+        logger(f"{condition.name} {condition.uniq_id}'s condition")
+        logger(f"true will go {condition.true_next}")
+        logger(f"false will go {condition.false_next}")
         subgraph.add_conditional_edges(
             condition.uniq_id,
             conditional_edge,
@@ -296,4 +296,4 @@ def run_workflow_as_server(llm):
             "input": None,
         }
     ):
-        flush_print(state)
+        logger(state)

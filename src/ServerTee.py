@@ -16,9 +16,9 @@ class ServerTee:
     def write(self, message):
         with self.lock:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            message_with_timestamp = f"{timestamp} - {message}\n"
+            message_with_timestamp = f"{timestamp} - {message}"
             # Ensure the final text ends with '\n'
-            if not message_with_timestamp.endswith(''):
+            if not message_with_timestamp.endswith('\n'):
                 message_with_timestamp += '\n'
             self.stdout.write(message_with_timestamp)
             self.stdout.flush()  # Ensure immediate output to console
