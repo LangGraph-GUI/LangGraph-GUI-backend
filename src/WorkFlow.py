@@ -263,7 +263,7 @@ def invoke_root(state: MainGraphState):
 
 def run_workflow_as_server(llm):
     # Load subgraph data
-    with open("graph.json", 'r') as file:
+    with open("workflow.json", 'r') as file:
         graphs = json.load(file)
     
     # Process each subgraph
