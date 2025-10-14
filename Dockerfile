@@ -1,8 +1,5 @@
 FROM python:3.12-slim
 
-# Change the timezone to UTC+8
-RUN ln -sf /usr/share/zoneinfo/Asia/Singapore /etc/localtime
-
 # Install necessary packages
 RUN apt-get update && apt-get install -y cron supervisor
 
